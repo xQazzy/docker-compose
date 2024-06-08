@@ -2,5 +2,5 @@ django
 djangorestframework
 gunicorn
 whitenoise
-#psycopg2-binary
+psycopg2-binary
 

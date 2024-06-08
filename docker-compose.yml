@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:13
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: netology_stocks_products
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+
+  backend:
+    build: .
+    command: >
+      sh -c "
+        until pg_isready -h postgres -U admin; do
+          echo 'Waiting for postgres...';
+          sleep 2;
+        done;
+        python manage.py migrate &&
+        gunicorn --bind 0.0.0.0:8000 stocks_products.wsgi:application
+      "
+    volumes:
+      - .:/src
+      - static_volume:/src/static
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_URL: postgres://admin:admin@postgres/netology_stocks_products
+      SECRET_KEY: django-insecure-nw^y+m^wmxza1asgk+)!ua2qx9)g+#v=6%76-9i8i(6eqiw94j
+      DEBUG: 'True'
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "8888:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - static_volume:/src/static
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  static_volume:
